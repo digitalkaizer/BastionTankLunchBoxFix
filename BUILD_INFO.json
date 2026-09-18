@@ -1,25 +1,38 @@
 {
   "name": "Bastion Lunchbox Fixes",
-  "version": "1.0.0",
+  "version": "1.0.3",
+  "derivation": "Exact known-working v13 patch core with option gates added only to the existing write plan",
   "module_resource": "mods/codex/gun_calibration",
-  "module_resource_hash": "1f91a091c62555d8",
+  "module_resource_hash": "9537023f38d32bcd",
   "archive_name": "9ba626afa44a3aa3.patch_0",
-  "damageable_zone": {
-    "zone_stride_bytes": 520,
-    "armor_offset_bytes": 212,
-    "health_offset_bytes": 228,
-    "affects_main_health_offset_bytes": 244,
-    "default_zone_info_bytes": 424,
-    "damageable_zones_offset_in_health_component_bytes": 488,
-    "lunch_box_zones": "6-11",
-    "side_skirt_zones": "16-23"
+  "preserved_v13_constants": {
+    "ZONE0": 520,
+    "STRIDE": 552,
+    "ZONE_HASH": 96,
+    "ARMOR": 216,
+    "HEALTH": 232,
+    "MAIN": 248,
+    "TARGET_REGION_SIZE": 35590144,
+    "TARGET_OFFSET": "0x994006",
+    "START_TICK": 600,
+    "RETRY_INTERVAL": 300,
+    "MAX_ATTEMPTS": 16
   },
-  "runtime_locator": {
-    "allocation_region_offset_hex": "0x994000",
-    "component_offset_from_region_bytes": 6,
-    "expected_region_size_bytes": 35590144
-  },
-  "compatibility_warning": "Uses mods/codex/gun_calibration loader slot; conflicts with HUD Ballistic Trajectory Overlay v2.",
+  "preserved_v13_behavior": [
+    "BASTION_HEADER signature validation",
+    "14 exact zone hashes and expected HP checks",
+    "VirtualQuery and ReadProcessMemory locator",
+    "exact-size and large_ro_fallback search",
+    "protection_base handling",
+    "VirtualProtect and WriteProcessMemory protected writer",
+    "write verification and protection restoration",
+    "rollback and post-write validation"
+  ],
+  "intentional_changes_from_v13": [
+    "Removed unrelated experimental Main Health HUD",
+    "Added three boolean option gates around the existing v13 plan() writes",
+    "Added eight mutually exclusive Arsenal configurations"
+  ],
   "variants": [
     {"folder":"01_All_3_Fixes","name":"All 3 Fixes (Recommended)","lunch_0main":true,"lunch_heavy":true,"skirts_0main":true},
     {"folder":"02_Lunch_Heavy_Skirts","name":"Lunch Heavy Armor + Side Skirts 0% Main","lunch_0main":false,"lunch_heavy":true,"skirts_0main":true},
@@ -29,5 +42,8 @@
     {"folder":"06_Lunch_0Main_Only","name":"Lunch Boxes 0% Main Only","lunch_0main":true,"lunch_heavy":false,"skirts_0main":false},
     {"folder":"07_Skirts_0Main_Only","name":"Side Skirts 0% Main Only","lunch_0main":false,"lunch_heavy":false,"skirts_0main":true},
     {"folder":"08_All_Off","name":"All Off / Diagnostic","lunch_0main":false,"lunch_heavy":false,"skirts_0main":false}
-  ]
+  ],
+  "compatibility_warning": "Uses the mods/codex/gun_calibration loader resource and therefore conflicts with HUD Ballistic Trajectory Overlay v2 in the current integration.",
+  "superseded_builds": "v1.0.0-v1.0.2 used a reconstructed layout/locator and are superseded by v1.0.3.",
+  "v13_reference_source_sha256": "7101259919ed649f40f12731eabd6c76f69267f772de31f509a64f4d0f265587"
 }
