@@ -1,8 +1,9 @@
-"""Reproducibly build Bastion Lunchbox Fixes v1.0.3.
+"""Reproducibly build Bastion Lunchbox Fixes v1.0.4.
 
-The runtime template is derived directly from the known-working v13 patch core.
-The builder only substitutes the three option booleans/configuration label and
-packages the resulting Lua verbatim into the Stingray archive.
+The Bastion runtime template remains derived directly from the known-working v13
+patch core. v1.0.4 prepends a small compatibility dispatcher for Codex Module
+Bridge v1, then substitutes only the three Bastion option booleans/config label
+and packages the combined Lua source into the existing gun_calibration resource.
 """
 
 from pathlib import Path
@@ -15,7 +16,14 @@ OUT = ROOT / "build"
 ARCHIVE_NAME = "9ba626afa44a3aa3.patch_0"
 RESOURCE_TYPE = 0xA14E8DFA2CD117E2
 RESOURCE_HASH = 0x9537023F38D32BCD
+RELEASE_VERSION = "1.0.4"
+EXPECTED_BRIDGE_MODULES = (
+    "mods/codex/p11_self_heal",
+    "mods/codex/constitution_bolt_amr",
+)
+
 TEMPLATE_PARTS = [
+    ROOT / "src" / "CodexModuleBridgeCompat.lua",
     ROOT / "src" / "BastionLunchboxFixes.template.part1.lua",
     ROOT / "src" / "BastionLunchboxFixes.template.part2.lua",
     ROOT / "src" / "BastionLunchboxFixes.template.part3.lua",
@@ -45,6 +53,19 @@ def lua_source(label: str, lunch_0main: bool, lunch_heavy: bool, skirts_0main: b
         text = text.replace(token, value)
     if "{{" in text or "}}" in text:
         raise RuntimeError("Unresolved template token")
+
+    # Compatibility is deliberately a prefix: bridge-owned gameplay modules
+    # initialize before the Bastion runtime wraps update().
+    bastion_guard = "if rawget(_G, 'KZR_BastionAccessoryArmor') then return end"
+    bridge_guard = "if not rawget(_G, 'CodexModuleBridge') then"
+    if bridge_guard not in text or bastion_guard not in text:
+        raise RuntimeError("Expected compatibility/runtime guards are missing")
+    if text.index(bridge_guard) > text.index(bastion_guard):
+        raise RuntimeError("Codex bridge compatibility must precede Bastion initialization")
+    for module_name in EXPECTED_BRIDGE_MODULES:
+        if module_name not in text:
+            raise RuntimeError(f"Missing Codex Bridge v1 module: {module_name}")
+
     return text.encode("utf-8")
 
 
@@ -65,6 +86,25 @@ def make_archive(lua: bytes) -> bytes:
     return bytes(body)
 
 
+def verify_archive(archive: bytes, expected_lua: bytes) -> None:
+    if len(archive) < 184:
+        raise RuntimeError("Archive is unexpectedly small")
+    magic, version, count = struct.unpack_from("<III", archive, 0)
+    if magic != 0xF0000011 or version != 1 or count != 1:
+        raise RuntimeError("Unexpected Stingray archive header")
+
+    resource_hash, resource_type, data_offset = struct.unpack_from("<QQQ", archive, 104)
+    if resource_hash != RESOURCE_HASH or resource_type != RESOURCE_TYPE:
+        raise RuntimeError("Archive resource identity mismatch")
+
+    lua_size, lua_kind = struct.unpack_from("<II", archive, data_offset)
+    if lua_kind != 2:
+        raise RuntimeError("Unexpected Lua resource kind")
+    embedded = archive[data_offset + 8:data_offset + 8 + lua_size]
+    if embedded != expected_lua:
+        raise RuntimeError("Embedded Lua does not match generated source")
+
+
 def main() -> None:
     if OUT.exists():
         shutil.rmtree(OUT)
@@ -75,11 +115,13 @@ def main() -> None:
         dest = OUT / folder
         dest.mkdir(parents=True)
         lua = lua_source(label, lunch_0main, lunch_heavy, skirts_0main)
-        (dest / ARCHIVE_NAME).write_bytes(make_archive(lua))
+        archive = make_archive(lua)
+        verify_archive(archive, lua)
+        (dest / ARCHIVE_NAME).write_bytes(archive)
         (dest / f"{ARCHIVE_NAME}.stream").write_bytes(b"")
         (dest / f"{ARCHIVE_NAME}.gpu_resources").write_bytes(b"")
 
-    arsenal = ROOT / "Bastion_Lunchbox_Fixes_v1.0.3_ExactV13_Arsenal.zip"
+    arsenal = ROOT / f"Bastion_Lunchbox_Fixes_v{RELEASE_VERSION}_ExactV13_Arsenal.zip"
     with zipfile.ZipFile(arsenal, "w", zipfile.ZIP_DEFLATED) as zf:
         for path in sorted(OUT.rglob("*")):
             if path.is_file():
