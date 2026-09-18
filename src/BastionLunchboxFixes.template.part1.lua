@@ -1,4 +1,4 @@
--- Bastion Lunchbox Fixes v1.0.3 - exact v13 patch core + option gates
+-- Bastion Lunchbox Fixes v1.0.4 - exact v13 patch core + option gates
 --
 -- Derived directly from the known-working Bastion runtime v13 patch core.
 -- The locator, validation hashes/offsets, memory scan, protected writer,
@@ -24,7 +24,7 @@ local CONFIG_LABEL = '{{CONFIG_LABEL}}'
 
 
 local state = {
-    revision = 'runtime-v13-options-v1.0.3',
+    revision = 'runtime-v13-options-v1.0.4',
     active = false,
     done = false,
     copies = 0,
