@@ -1,8 +1,8 @@
-# Bastion Lunchbox Fixes v1.0.3
+# Bastion Lunchbox Fixes v1.0.4
 
 A focused runtime bugfix/tweak package for the **TD-220 Bastion MK XVI**, targeting the external stowage boxes ("Lunch Boxes") and side skirts.
 
-> **v1.0.3 correction:** the runtime is now derived directly from the known-working `Bastion_Fix_Main_Health_HUD_Runtime_v13_Arsenal.zip` patch core. The v13 locator, validation, protected writer, retry behavior, and rollback logic are preserved. The three requested fixes are only gated behind Arsenal configuration options; the unrelated experimental Main Health HUD is not included.
+> **v1.0.4 compatibility update:** the proven v1.0.3/v13 Bastion runtime core is preserved. A small compatibility dispatcher now runs before it so **Codex Module Bridge v1** can remain installed independently despite sharing `mods/codex/gun_calibration`. Give **Bastion Lunchbox Fixes the winning priority** for that shared resource.
 
 ## Features
 
@@ -32,9 +32,9 @@ This example intentionally does **not** include the Cannon Turret projectile's s
 
 With the recommended configuration, the Lunch Boxes become **AV4**, and both Lunch Boxes and side skirts transfer **0%** of their damage into Main Health. They remain destructible external components but behave more like sacrificial armor/stowage rather than amplified structural weak points.
 
-## v1.0.3 runtime basis
+## Runtime basis
 
-v1.0.3 is based directly on the uploaded, known-working v13 patch core rather than a reconstructed FileDiver layout.
+The Bastion patch remains based directly on the uploaded, known-working v13 patch core rather than a reconstructed FileDiver layout.
 
 The following v13 behavior/constants are preserved:
 
@@ -57,7 +57,30 @@ The following v13 behavior/constants are preserved:
 - `RETRY_INTERVAL = 300`
 - `MAX_ATTEMPTS = 16`
 
-The only gameplay-code change is inside the proven v13 `plan()` function: its existing writes are gated by the three selected options.
+The gameplay-code change inside the proven v13 `plan()` function remains limited to the three selected option gates.
+
+## Codex Module Bridge v1 compatibility
+
+Codex Module Bridge v1 and this mod both publish the Lua resource:
+
+`mods/codex/gun_calibration`
+
+Only one implementation of that resource can win after deployment. Bridge v1's functional job is to conditionally start these separately installed modules:
+
+- `mods/codex/p11_self_heal`
+- `mods/codex/constitution_bolt_amr`
+
+v1.0.4 independently reproduces that dispatch behavior **before** installing the Bastion runtime. It checks `stingray.Application.can_get('lua', name)` before calling `require(name)`, so either module can be absent without breaking startup.
+
+This means users may download, update, enable, and disable **Codex Module Bridge v1** and **Bastion Lunchbox Fixes** as independent mods. Arsenal may still display a resource-conflict warning because both packages physically contain `gun_calibration`; that warning is expected. For the compatibility path to work, **Bastion Lunchbox Fixes must have the winning priority for `gun_calibration`**.
+
+Under Arsenal's normal priority behavior, place **Bastion Lunchbox Fixes after/below Codex Module Bridge v1**, while still following Bingus Shared Loader's own placement instructions.
+
+Compatibility is specifically pinned to the supplied **Codex Module Bridge v1** behavior. If a future bridge release adds/removes modules or changes startup logic, this compatibility shim must be revalidated.
+
+### Remaining incompatibility
+
+**HUD Ballistic Trajectory Overlay v2 remains incompatible with this implementation.** It also owns `mods/codex/gun_calibration` and contains gameplay behavior that cannot be safely replaced by the Bridge v1 compatibility shim.
 
 ## Configurations
 
@@ -68,46 +91,47 @@ The only gameplay-code change is inside the proven v13 `plan()` function: its ex
 5. **Lunch Boxes Heavy Armor Only**
 6. **Lunch Boxes 0% Main Only**
 7. **Side Skirts 0% Main Only**
-8. **All Off / Diagnostic** — runs the v13 locator/validator with no gameplay writes
+8. **All Off / Diagnostic** — runs the v13 locator/validator with no Bastion gameplay writes; Bridge v1 compatibility dispatch still runs
 
 ## Requirement: Bingus Shared Loader
 
 **Bingus Shared Loader by CowboyBingus is REQUIRED and is not included.** Install it separately and follow the loader's current installation/load-order instructions.
 
-This is an unofficial third-party integration. It is not authored, maintained, endorsed, or supported by CowboyBingus.
-
-### Compatibility warning
-
-This experimental build currently uses the loader registration resource associated with `mods/codex/gun_calibration`. That resource is also used by **HUD Ballistic Trajectory Overlay v2**. Do **not** run both mods together with this implementation; a resource collision can prevent one from loading.
+This is an unofficial third-party integration. It is not authored, maintained, endorsed, or supported by CowboyBingus or the Codex Module Bridge author.
 
 ## Installation
 
 1. Install **Bingus Shared Loader** separately.
-2. Import `Bastion_Lunchbox_Fixes_v1.0.3_ExactV13_Arsenal.zip` into Arsenal.
-3. Enable **Bastion Lunchbox Fixes**.
-4. Choose one **Fix Configuration** option.
+2. Import `Bastion_Lunchbox_Fixes_v1.0.4_ExactV13_Arsenal.zip` into Arsenal.
+3. If using **Codex Module Bridge v1**, keep it enabled normally and give **Bastion Lunchbox Fixes the winning priority** over it for their shared resource.
+4. Enable **Bastion Lunchbox Fixes** and choose one **Fix Configuration** option.
 5. Use **All 3 Fixes (Recommended)** for the full intended setup.
 6. Purge/deploy the Arsenal profile with the game closed.
 7. Launch Helldivers 2.
 
-The exact-v13-derived runtime writes its diagnostic status to:
+The Bastion runtime writes its diagnostic status to:
 
 `%LOCALAPPDATA%\CowboyBingus\Helldivers2\Logs\BastionAccessoryArmor.log`
 
+The compatibility dispatcher also attempts to write:
+
+`%LOCALAPPDATA%\CowboyBingus\Helldivers2\Logs\CodexModuleBridge.log`
+
 ## Repository layout
 
-- `src/BastionLunchboxFixes.template.part*.lua` — the exact-v13-derived runtime template split into three source parts for repository storage; the builder concatenates them verbatim before substituting the three option booleans/configuration label
+- `src/CodexModuleBridgeCompat.lua` — Bridge v1 compatibility prefix; conditionally starts the two Codex gameplay modules before the Bastion runtime
+- `src/BastionLunchboxFixes.template.part*.lua` — exact-v13-derived Bastion runtime template split into three source parts
 - `manifest.json` — Arsenal option definitions
-- `BUILD_INFO.json` — preserved v13 constants, source hash, and derivation details
-- `build_bastion_lunchbox_fixes.py` — substitutes option values and packages the resulting Lua into the Arsenal archive format
+- `BUILD_INFO.json` — preserved v13 constants, compatibility contract, and derivation details
+- `build_bastion_lunchbox_fixes.py` — joins the compatibility prefix and exact Bastion core, substitutes option values, validates ordering/resource identity, and packages the Arsenal archive
 - `CHANGELOG.md` — release/history notes
 
 ## Disclaimer
 
 **Vibe coded with ChatGPT.**
 
-This is an experimental third-party mod built from community research, game-data analysis, reverse engineering, in-game testing, and AI-assisted code generation. Compatibility with future Helldivers 2 or Shared Loader versions is not guaranteed. Use at your own risk.
+This is an experimental third-party mod built from community research, game-data analysis, reverse engineering, in-game testing, and AI-assisted code generation. Compatibility with future Helldivers 2, Codex Module Bridge, or Shared Loader versions is not guaranteed. Use at your own risk.
 
-Bingus Shared Loader is authored and distributed separately by CowboyBingus; none of its code is bundled here.
+Bingus Shared Loader and Codex Module Bridge are authored and distributed separately; their packages are not bundled here.
 
-Helldivers 2 is property of Arrowhead Game Studios / Sony Interactive Entertainment. This project is not affiliated with or endorsed by Arrowhead, Sony, or CowboyBingus.
+Helldivers 2 is property of Arrowhead Game Studios / Sony Interactive Entertainment. This project is not affiliated with or endorsed by Arrowhead, Sony, CowboyBingus, or the Codex Module Bridge author.
