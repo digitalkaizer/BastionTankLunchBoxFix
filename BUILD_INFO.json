@@ -1,0 +1,33 @@
+{
+  "name": "Bastion Lunchbox Fixes",
+  "version": "1.0.0",
+  "module_resource": "mods/codex/gun_calibration",
+  "module_resource_hash": "1f91a091c62555d8",
+  "archive_name": "9ba626afa44a3aa3.patch_0",
+  "damageable_zone": {
+    "zone_stride_bytes": 520,
+    "armor_offset_bytes": 212,
+    "health_offset_bytes": 228,
+    "affects_main_health_offset_bytes": 244,
+    "default_zone_info_bytes": 424,
+    "damageable_zones_offset_in_health_component_bytes": 488,
+    "lunch_box_zones": "6-11",
+    "side_skirt_zones": "16-23"
+  },
+  "runtime_locator": {
+    "allocation_region_offset_hex": "0x994000",
+    "component_offset_from_region_bytes": 6,
+    "expected_region_size_bytes": 35590144
+  },
+  "compatibility_warning": "Uses mods/codex/gun_calibration loader slot; conflicts with HUD Ballistic Trajectory Overlay v2.",
+  "variants": [
+    {"folder":"01_All_3_Fixes","name":"All 3 Fixes (Recommended)","lunch_0main":true,"lunch_heavy":true,"skirts_0main":true},
+    {"folder":"02_Lunch_Heavy_Skirts","name":"Lunch Heavy Armor + Side Skirts 0% Main","lunch_0main":false,"lunch_heavy":true,"skirts_0main":true},
+    {"folder":"03_Lunch_0Main_Heavy","name":"Lunch 0% Main + Heavy Armor","lunch_0main":true,"lunch_heavy":true,"skirts_0main":false},
+    {"folder":"04_Lunch_0Main_Skirts","name":"Lunch 0% Main + Side Skirts 0% Main","lunch_0main":true,"lunch_heavy":false,"skirts_0main":true},
+    {"folder":"05_Lunch_Heavy_Only","name":"Lunch Boxes Heavy Armor Only","lunch_0main":false,"lunch_heavy":true,"skirts_0main":false},
+    {"folder":"06_Lunch_0Main_Only","name":"Lunch Boxes 0% Main Only","lunch_0main":true,"lunch_heavy":false,"skirts_0main":false},
+    {"folder":"07_Skirts_0Main_Only","name":"Side Skirts 0% Main Only","lunch_0main":false,"lunch_heavy":false,"skirts_0main":true},
+    {"folder":"08_All_Off","name":"All Off / Diagnostic","lunch_0main":false,"lunch_heavy":false,"skirts_0main":false}
+  ]
+}
