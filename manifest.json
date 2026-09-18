@@ -2,7 +2,7 @@
   "Version": 1,
   "Guid": "1eb0b075-035c-49d8-b7f0-67311d56b83b",
   "Name": "Bastion Lunchbox Fixes",
-  "Description": "v1.0.3: exact known-working runtime-v13 Bastion locator/writer with only the three requested fixes gated as selectable configurations. Requires Bingus Shared Loader.",
+  "Description": "v1.0.4: exact known-working runtime-v13 Bastion core plus Codex Module Bridge v1 compatibility. Requires Bingus Shared Loader. If Codex Module Bridge v1 is also installed, give this mod winning priority for gun_calibration.",
   "Options": [
     {
       "Name": "Fix Configuration",
@@ -15,7 +15,7 @@
         {"Name":"Lunch Boxes Heavy Armor Only","Description":"Changes Lunch Boxes from AV2 to AV4 only.","Include":["05_Lunch_Heavy_Only"]},
         {"Name":"Lunch Boxes 0% Main Only","Description":"Forces Lunch Box Main Health transfer to 0% only.","Include":["06_Lunch_0Main_Only"]},
         {"Name":"Side Skirts 0% Main Only","Description":"Forces Side Skirt Main Health transfer to 0% only.","Include":["07_Skirts_0Main_Only"]},
-        {"Name":"All Off / Diagnostic","Description":"Runs the exact v13 locator/validator but makes no gameplay writes.","Include":["08_All_Off"]}
+        {"Name":"All Off / Diagnostic","Description":"Runs the exact v13 locator/validator but makes no Bastion gameplay writes. Codex Bridge v1 compatibility dispatch still runs.","Include":["08_All_Off"]}
       ]
     }
   ]
