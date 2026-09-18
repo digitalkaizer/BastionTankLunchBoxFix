@@ -105,6 +105,20 @@ def verify_archive(archive: bytes, expected_lua: bytes) -> None:
         raise RuntimeError("Embedded Lua does not match generated source")
 
 
+def deterministic_zip(root: Path, destination: Path) -> None:
+    """Write stable ZIP bytes independent of filesystem mtimes or build host."""
+    with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as zf:
+        for path in sorted(root.rglob("*")):
+            if not path.is_file():
+                continue
+            relative = path.relative_to(root).as_posix()
+            info = zipfile.ZipInfo(relative, date_time=(1980, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.create_system = 3
+            info.external_attr = 0o100644 << 16
+            zf.writestr(info, path.read_bytes())
+
+
 def main() -> None:
     if OUT.exists():
         shutil.rmtree(OUT)
@@ -122,10 +136,7 @@ def main() -> None:
         (dest / f"{ARCHIVE_NAME}.gpu_resources").write_bytes(b"")
 
     arsenal = ROOT / f"Bastion_Lunchbox_Fixes_v{RELEASE_VERSION}_ExactV13_Arsenal.zip"
-    with zipfile.ZipFile(arsenal, "w", zipfile.ZIP_DEFLATED) as zf:
-        for path in sorted(OUT.rglob("*")):
-            if path.is_file():
-                zf.write(path, path.relative_to(OUT))
+    deterministic_zip(OUT, arsenal)
     print(arsenal)
 
 
