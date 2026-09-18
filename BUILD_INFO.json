@@ -1,7 +1,7 @@
 {
   "name": "Bastion Lunchbox Fixes",
-  "version": "1.0.3",
-  "derivation": "Exact known-working v13 patch core with option gates added only to the existing write plan",
+  "version": "1.0.4",
+  "derivation": "Exact known-working v13 Bastion patch core with option gates, prefixed by an independently implemented Codex Module Bridge v1 compatibility dispatcher",
   "module_resource": "mods/codex/gun_calibration",
   "module_resource_hash": "9537023f38d32bcd",
   "archive_name": "9ba626afa44a3aa3.patch_0",
@@ -31,8 +31,19 @@
   "intentional_changes_from_v13": [
     "Removed unrelated experimental Main Health HUD",
     "Added three boolean option gates around the existing v13 plan() writes",
-    "Added eight mutually exclusive Arsenal configurations"
+    "Added eight mutually exclusive Arsenal configurations",
+    "v1.0.4 prepends a Codex Module Bridge v1 compatibility dispatcher before the unchanged Bastion runtime core"
   ],
+  "codex_module_bridge_v1_compatibility": {
+    "purpose": "Allow the independently distributed Codex Module Bridge v1 and Bastion Lunchbox Fix to remain installed together despite both defining mods/codex/gun_calibration",
+    "required_load_order": "Bastion Lunchbox Fix must have winning priority for mods/codex/gun_calibration",
+    "loads_if_present": [
+      "mods/codex/p11_self_heal",
+      "mods/codex/constitution_bolt_amr"
+    ],
+    "behavior": "Uses stingray.Application.can_get before require, isolates lookup/load failures, and uses the CodexModuleBridge global guard to prevent duplicate initialization",
+    "scope": "Compatibility is specifically for Codex Module Bridge v1 behavior observed in the supplied package; future bridge versions require revalidation"
+  },
   "variants": [
     {"folder":"01_All_3_Fixes","name":"All 3 Fixes (Recommended)","lunch_0main":true,"lunch_heavy":true,"skirts_0main":true},
     {"folder":"02_Lunch_Heavy_Skirts","name":"Lunch Heavy Armor + Side Skirts 0% Main","lunch_0main":false,"lunch_heavy":true,"skirts_0main":true},
@@ -43,7 +54,8 @@
     {"folder":"07_Skirts_0Main_Only","name":"Side Skirts 0% Main Only","lunch_0main":false,"lunch_heavy":false,"skirts_0main":true},
     {"folder":"08_All_Off","name":"All Off / Diagnostic","lunch_0main":false,"lunch_heavy":false,"skirts_0main":false}
   ],
-  "compatibility_warning": "Uses the mods/codex/gun_calibration loader resource and therefore conflicts with HUD Ballistic Trajectory Overlay v2 in the current integration.",
-  "superseded_builds": "v1.0.0-v1.0.2 used a reconstructed layout/locator and are superseded by v1.0.3.",
+  "compatibility_warning": "Still uses mods/codex/gun_calibration. Codex Module Bridge v1 is supported only when this mod wins that resource. HUD Ballistic Trajectory Overlay v2 remains incompatible with this implementation.",
+  "static_datalibrary_note": "A decoded generated_entities.dl_bin contains the proven Bastion structure at 0x994006, but the retail loose DataLibrary is encrypted. Deploying the decoded bytes directly is not a valid replacement, so v1.0.4 retains the proven runtime writer.",
+  "superseded_builds": "v1.0.0-v1.0.2 used a reconstructed layout/locator and are superseded by v1.0.3+.",
   "v13_reference_source_sha256": "7101259919ed649f40f12731eabd6c76f69267f772de31f509a64f4d0f265587"
 }
