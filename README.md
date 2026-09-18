@@ -4,11 +4,33 @@ A focused runtime bugfix/tweak package for the TD-220 Bastion MK XVI.
 
 ## Features
 
-- **“Lunch Boxes” — No Longer Transfer Damage to Main**: forces Bastion stowage/lunch-box zones 6–11 to 0% Main Health transfer. On the currently tested game data these zones already appear to be configured for 0% transfer; this option is included as an explicit runtime enforcement/test toggle.
+- **“Lunch Boxes” — No Longer Transfer Damage to Main**: forces Bastion stowage/lunch-box zones 6–11 to 0% Main Health transfer. Their individual HP/durability is not changed.
 - **Lunch Boxes — Light to Heavy Armor**: changes zones 6–11 from Armor Value 2 to Armor Value 4. Health/durability is not changed.
-- **Side Skirts — No Longer Transfer Damage to Main**: forces zones 16–23 from 100% Main Health transfer to 0% while leaving their HP/durability and armor unchanged.
+- **Side Skirts — No Longer Transfer Damage to Main**: forces zones 16–23 from transferring damage into Main Health to 0% while leaving their HP/durability and armor unchanged.
 
 Because the shared loader exposes one runtime module entry rather than composable feature hooks, this package ships all eight possible combinations as a single Arsenal radio-choice group. Select **All 3 Fixes (Recommended)** unless you specifically want to isolate/test one behavior.
+
+## Why this fix matters
+
+The stock Bastion's lunch boxes and side skirts are not just unusually punishing because damage to disposable external components can also reduce the tank's Main Health. They interact especially badly with Helldivers 2's lesser-known **overpenetration** mechanic.
+
+When a projectile's Armor Penetration is at least two levels higher than the Armor Value of the part it hits, the projectile can continue through that part and strike another damageable part behind it. The continued projectile typically deals about **30% reduced damage**, meaning the second hit still retains roughly **70% of the original ballistic damage**.
+
+That creates a form of damage "double dipping" against the live Bastion. Several dangerous Automaton weapons use **AP6**, including Cannon Turrets and Rocket Striders. The stock lunch boxes are only **AV2**, while the side skirts are also vulnerable to AP6 overpenetration.
+
+For example, using only the ballistic portion of a Cannon Turret projectile:
+
+- Initial ballistic damage: **1,500**
+- The hit on a stock lunch box can also transfer that damage into the Bastion's Main Health pool.
+- Because AP6 greatly exceeds the lunch box's AV2, the projectile can then continue through it into another tank hit zone.
+- The overpenetrating hit retains roughly 70% damage: **1,500 × 0.70 = 1,050** additional ballistic damage.
+- That produces as much as **2,550 ballistic damage worth of interaction from a single projectile path** before considering any other damage components.
+
+That example does **not** include the Cannon Turret projectile's separate **AP4 explosive damage**, so it is intentionally only illustrating the ballistic overpenetration problem.
+
+This is why the change is more than a cosmetic durability tweak. A thin external stowage box or sacrificial side skirt should not act like an amplified structural weak point that both transfers damage directly into the hull and then allows the same high-penetration projectile to continue into the tank for another substantial hit.
+
+With the recommended configuration, the lunch boxes are changed to **AV4** and both the lunch boxes and side skirts are set to **0% Main Health transfer**. They remain destructible external components, but they behave more like sacrificial armor/stowage rather than unusually severe hull weak points. Against AP6 fire they can still be penetrated, but destroying or penetrating them no longer directly subtracts their hit damage from the Bastion's Main Health at the same time.
 
 ## Requirement: Bingus Shared Loader
 
