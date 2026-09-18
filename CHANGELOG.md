@@ -3,6 +3,7 @@
 ## v1.0.4 — Codex Module Bridge v1 Compatibility
 
 - Preserves the exact known-working v13 Bastion runtime core used by v1.0.3.
+- Corrects the Bastion runtime/log revision label to `runtime-v13-options-v1.0.4`; this is metadata only and does not change locator/writer behavior.
 - Adds a small compatibility dispatcher before the Bastion runtime for **Codex Module Bridge v1**.
 - When Bastion Lunchbox Fix has winning priority for `mods/codex/gun_calibration`, it now conditionally starts the two modules Bridge v1 was responsible for starting:
   - `mods/codex/p11_self_heal`
