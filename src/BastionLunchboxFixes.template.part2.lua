@@ -140,12 +140,72 @@ local function plan(candidate)
     return actions
 end
 
+local function restore_staged_lunch_armor(staged)
+    local ok = true
+    for i=#staged,1,-1 do
+        local a = staged[i]
+        local current = field_u32(a.address)
+        if current ~= a.before then
+            local restored = write_u32(a.address, a.before)
+            if not restored then ok = false end
+        end
+    end
+    return ok
+end
+
+local function prime_lunch_armor_for_light_skirts(candidate)
+    local staged = {}
+    for _,t in ipairs(targets) do
+        local index, desired_armor = t[1], t[6]
+        if index <= 11 then
+            local address = zone_address(candidate, index) + ARMOR
+            local current = field_u32(address)
+            if not current then
+                restore_staged_lunch_armor(staged)
+                return nil, 'prime_bin_armor_' .. tostring(index) .. '_unreadable'
+            end
+            if current ~= desired_armor then
+                local ok, err = write_u32(address, desired_armor)
+                if not ok then
+                    restore_staged_lunch_armor(staged)
+                    return nil, 'prime_bin_armor_' .. tostring(index) .. '_' .. tostring(err)
+                end
+                staged[#staged+1] = {
+                    address=address,before=current,after=desired_armor,label='prime_bin_armor_'..index
+                }
+            end
+        end
+    end
+    return staged
+end
+
 local function apply(candidate)
     local valid, reason = validate(candidate)
     if not valid then return false, reason, 0 end
+
+    -- Proven v1.0.6 sequencing fix for the light-box + 0% skirt configuration.
+    -- Direct skirt writes CTD when Lunch Boxes remain AV2 throughout the write pass.
+    -- Reproduce the safe option-1 sequence by temporarily staging all six Lunch
+    -- Boxes to AV4, applying the normal skirt writes, then restoring their prior
+    -- armor values before returning. Final gameplay state remains AV2 + 0% skirts.
+    local staged = {}
+    local staged_mode = OPT_SKIRTS_TRANSFER and not OPT_HEAVY_ARMOR
+    if staged_mode then
+        local prime_reason
+        staged, prime_reason = prime_lunch_armor_for_light_skirts(candidate)
+        if not staged then return false, prime_reason, 0 end
+    end
+
     local actions, why = plan(candidate)
-    if not actions then return false, why, 0 end
-    if #actions == 0 then return true, 'already_applied', 0 end
+    if not actions then
+        local restored = restore_staged_lunch_armor(staged)
+        return false, tostring(why) .. (restored and '; stage_restored' or '; STAGE_RESTORE_FAILED'), 0
+    end
+    if #actions == 0 then
+        local restored = restore_staged_lunch_armor(staged)
+        if not restored then return false, 'already_applied_STAGE_RESTORE_FAILED', 0 end
+        return true, staged_mode and 'already_applied_staged_light_skirts' or 'already_applied', 0
+    end
 
     local completed = {}
     local current_rollback_ok = true
@@ -175,6 +235,19 @@ local function apply(candidate)
             local restored = write_u32(a.address, a.before)
             if not restored then rollback_ok = false end
         end
+        if not restore_staged_lunch_armor(staged) then rollback_ok = false end
         return false, tostring(why) .. (rollback_ok and '; rolled_back' or '; ROLLBACK_FAILED'), #completed
+    end
+
+    if not restore_staged_lunch_armor(staged) then
+        -- Skirt writes succeeded but the temporary armor stage did not restore.
+        -- Roll skirts back before returning failure so we do not leave a mixed state.
+        local rollback_ok = true
+        for i=#completed,1,-1 do
+            local a = completed[i]
+            local restored = write_u32(a.address, a.before)
+            if not restored then rollback_ok = false end
+        end
+        return false, rollback_ok and 'stage_restore_failed; skirts_rolled_back' or 'stage_restore_failed; ROLLBACK_FAILED', #completed
     end
 

@@ -1,10 +1,12 @@
-"""Reproducibly build Bastion Lunchbox Fixes v1.0.5.
+"""Reproducibly build DigitalKaizer Bastion Lunchbox Fixes v1.0.6.
 
-v1.0.5 deliberately preserves the known-working v1.0.4/v13 runtime and Codex
-Module Bridge compatibility prefix. The Arsenal configuration set is reduced to
-three useful choices. All generated runtime Lua resources are forced to the same
-byte length so alternate configurations keep the same Stingray archive geometry
-as the working recommended configuration.
+v1.0.6 preserves the exact-v13 Bastion locator/protected writer and the optional
+Codex Module Bridge v1 compatibility behavior, permanently incorporates the
+proven staged-write sequence required by the AV2 Lunch Boxes + 0% Side Skirts
+configuration, and uses DigitalKaizer-owned runtime/log identifiers.
+
+All variants use the same Lua source geometry; only fixed-width option literals
+and a fixed-width configuration label differ.
 """
 
 from pathlib import Path
@@ -17,7 +19,7 @@ OUT = ROOT / "build"
 ARCHIVE_NAME = "9ba626afa44a3aa3.patch_0"
 RESOURCE_TYPE = 0xA14E8DFA2CD117E2
 RESOURCE_HASH = 0x9537023F38D32BCD
-RELEASE_VERSION = "1.0.5"
+RELEASE_VERSION = "1.0.6"
 RUNTIME_LABEL_WIDTH = 25
 EXPECTED_BRIDGE_MODULES = (
     "mods/codex/p11_self_heal",
@@ -55,11 +57,7 @@ VARIANTS = [
 
 
 def fixed_bool(value: bool) -> str:
-    """Return a four-byte Lua truthy/falsey literal.
-
-    `true` and `nil ` are both exactly four bytes. This keeps every generated
-    Lua resource the same length while preserving normal Lua boolean behavior.
-    """
+    """Return a four-byte Lua truthy/falsey literal."""
     return "true" if value else "nil "
 
 
@@ -82,17 +80,22 @@ def lua_source(runtime_label: str, lunch_0main: bool, lunch_heavy: bool, skirts_
     if "{{" in text or "}}" in text:
         raise RuntimeError("Unresolved template token")
 
-    # Compatibility is deliberately a prefix: bridge-owned gameplay modules
-    # initialize before the Bastion runtime wraps update().
-    bastion_guard = "if rawget(_G, 'KZR_BastionAccessoryArmor') then return end"
-    bridge_guard = "if not rawget(_G, 'CodexModuleBridge') then"
-    if bridge_guard not in text or bastion_guard not in text:
-        raise RuntimeError("Expected compatibility/runtime guards are missing")
-    if text.index(bridge_guard) > text.index(bastion_guard):
-        raise RuntimeError("Codex bridge compatibility must precede Bastion initialization")
+    bastion_guard = "if rawget(_G, 'DigitalKaizerBastionLunchboxFix')"
+    compat_guard = "if not rawget(_G, 'DigitalKaizerBastionCodexCompat') then"
+    if compat_guard not in text or bastion_guard not in text:
+        raise RuntimeError("Expected DigitalKaizer compatibility/runtime guards are missing")
+    if text.index(compat_guard) > text.index(bastion_guard):
+        raise RuntimeError("Codex compatibility must precede Bastion initialization")
     for module_name in EXPECTED_BRIDGE_MODULES:
         if module_name not in text:
             raise RuntimeError(f"Missing Codex Bridge v1 module: {module_name}")
+
+    if "logger.open_log('DigitalKaizerBastionLunchboxFix.log')" not in text:
+        raise RuntimeError("Owned Bastion log path is missing")
+    if "logger.open_log('DigitalKaizerBastionLunchboxFixCompat.log')" not in text:
+        raise RuntimeError("Owned compatibility log path is missing")
+    if "rawset(_G, 'CodexModuleBridge'" in text:
+        raise RuntimeError("Compatibility shim must not claim the CodexModuleBridge global")
 
     return text.encode("utf-8")
 
@@ -134,7 +137,6 @@ def verify_archive(archive: bytes, expected_lua: bytes) -> None:
 
 
 def deterministic_zip(root: Path, destination: Path) -> None:
-    """Write stable ZIP bytes independent of filesystem mtimes or build host."""
     with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as zf:
         for path in sorted(root.rglob("*")):
             if not path.is_file():

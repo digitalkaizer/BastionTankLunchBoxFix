@@ -2,15 +2,33 @@
   "Version": 1,
   "Guid": "1eb0b075-035c-49d8-b7f0-67311d56b83b",
   "Name": "Bastion Lunchbox Fixes",
-  "Description": "v1.0.5: trims the configuration list to three useful choices while preserving the known-working v1.0.4/v13 runtime and optional Codex Module Bridge v1 compatibility. Requires Bingus Shared Loader. If Codex Module Bridge v1 is also installed, give this mod winning priority for gun_calibration.",
+  "Description": "v1.0.6: three stable configurations, permanent staged-write sequencing for light Lunch Boxes + 0% skirts, DigitalKaizer-owned runtime/log identifiers, and optional Codex Module Bridge v1 compatibility. Requires Bingus Shared Loader.",
   "Options": [
     {
       "Name": "Fix Configuration",
       "Description": "Choose one configuration. All 3 Fixes is recommended.",
       "SubOptions": [
-        {"Name":"All 3 Fixes (Recommended)","Description":"Lunch Boxes: 0% Main transfer + AV4; Side Skirts: 0% Main transfer.","Include":["01_All_3_Fixes"]},
-        {"Name":"Light Lunch Boxes + Side Skirts 0% Main","Description":"Lunch Boxes remain AV2 with 0% Main transfer; Side Skirts use 0% Main transfer.","Include":["02_Light_Lunch_And_Skirts"]},
-        {"Name":"Light Lunch Boxes 0% Main Only","Description":"Lunch Boxes remain AV2 with 0% Main transfer; Side Skirts remain vanilla.","Include":["03_Light_Lunch_Only"]}
+        {
+          "Name": "All 3 Fixes (Recommended)",
+          "Description": "Lunch Boxes: 0% Main transfer + AV4; Side Skirts: 0% Main transfer.",
+          "Include": [
+            "01_All_3_Fixes"
+          ]
+        },
+        {
+          "Name": "Light Lunch Boxes + Side Skirts 0% Main",
+          "Description": "Lunch Boxes remain AV2 with 0% Main transfer; Side Skirts use 0% Main transfer. Uses the proven safe staged-write sequence internally.",
+          "Include": [
+            "02_Light_Lunch_And_Skirts"
+          ]
+        },
+        {
+          "Name": "Light Lunch Boxes 0% Main Only",
+          "Description": "Lunch Boxes remain AV2 with 0% Main transfer; Side Skirts remain vanilla.",
+          "Include": [
+            "03_Light_Lunch_Only"
+          ]
+        }
       ]
     }
   ]

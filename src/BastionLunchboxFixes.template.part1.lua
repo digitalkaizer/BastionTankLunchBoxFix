@@ -1,4 +1,4 @@
--- Bastion Lunchbox Fixes v1.0.4 - exact v13 patch core + option gates
+-- DigitalKaizer Bastion Lunchbox Fix v1.0.6 - exact v13 patch core + option gates
 --
 -- Derived directly from the known-working Bastion runtime v13 patch core.
 -- The locator, validation hashes/offsets, memory scan, protected writer,
@@ -15,7 +15,7 @@
 -- immediately. It never changes executable/image pages and never leaves a page
 -- writable intentionally.
 
-if rawget(_G, 'KZR_BastionAccessoryArmor') then return end
+if rawget(_G, 'DigitalKaizerBastionLunchboxFix') or rawget(_G, 'KZR_BastionAccessoryArmor') then return end
 
 local OPT_LUNCH_TRANSFER = {{OPT_LUNCH_TRANSFER}}
 local OPT_HEAVY_ARMOR = {{OPT_HEAVY_ARMOR}}
@@ -24,23 +24,23 @@ local CONFIG_LABEL = '{{CONFIG_LABEL}}'
 
 
 local state = {
-    revision = 'runtime-v13-options-v1.0.4',
+    revision = 'runtime-v13-digitalkaizer-v1.0.6',
     active = false,
     done = false,
     copies = 0,
     writes = 0,
     status = 'installed; exact v13 targeted DataLibrary locator + protected data writer armed'
 }
-rawset(_G, 'KZR_BastionAccessoryArmor', state)
+rawset(_G, 'DigitalKaizerBastionLunchboxFix', state)
 
 local function report(message)
     state.status = tostring(message)
-    print('[BastionAccessoryArmor] ' .. state.revision .. ': ' .. state.status)
+    print('[DigitalKaizerBastionLunchboxFix] ' .. state.revision .. ': ' .. state.status)
     pcall(function()
         local logger = rawget(_G, 'CowboyBingusModLoader')
-        local file = logger and logger.open_log and logger.open_log('BastionAccessoryArmor.log')
+        local file = logger and logger.open_log and logger.open_log('DigitalKaizerBastionLunchboxFix.log')
         if not file then return end
-        file:write('Bastion Accessory Armor ' .. state.revision .. '\n')
+        file:write('DigitalKaizer Bastion Lunchbox Fix ' .. state.revision .. '\n')
         file:write(state.status .. '\n')
         file:write('copies=' .. tostring(state.copies) .. '\n')
         file:write('writes=' .. tostring(state.writes) .. '\n')
