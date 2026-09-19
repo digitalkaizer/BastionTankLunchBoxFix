@@ -1,42 +1,53 @@
-# Bastion Lunchbox Fixes v1.0.4
+# Bastion Lunchbox Fixes v1.0.5
 
 A focused runtime bugfix/tweak package for the **TD-220 Bastion MK XVI**, targeting the external stowage boxes ("Lunch Boxes") and side skirts.
 
-> **v1.0.4 compatibility update:** the proven v1.0.3/v13 Bastion runtime core is preserved. A small compatibility dispatcher now runs before it so **Codex Module Bridge v1** can remain installed independently despite sharing `mods/codex/gun_calibration`. Give **Bastion Lunchbox Fixes the winning priority** for that shared resource.
+> **v1.0.5 stability cleanup:** the proven v1.0.4 / exact-v13 Bastion runtime and Codex Module Bridge compatibility dispatcher are preserved. The option list is reduced to three useful configurations, and all generated variants are forced to use identical Lua-resource and Stingray-archive geometry.
 
 ## Features
 
-- **Lunch Boxes — 0% Main Health transfer:** the six external stowage zones (6–11) remain destructible, but damage to them no longer transfers into the Bastion's Main Health pool.
-- **Lunch Boxes — AV2 → AV4:** optionally changes those six zones from Armor Value 2 to Armor Value 4 without changing their HP/durability.
-- **Side Skirts — 0% Main Health transfer:** the eight side-skirt zones (16–23) remain destructible with their existing AV4/HP, but damage to the skirts no longer transfers into Main Health.
+- **Lunch Boxes — 0% Main Health transfer:** the six external stowage zones (6–11) remain destructible, but damage to them does not transfer into the Bastion's Main Health pool.
+- **Lunch Boxes — AV2 → AV4:** the recommended configuration changes those six zones from Armor Value 2 to Armor Value 4 without changing their HP/durability.
+- **Side Skirts — 0% Main Health transfer:** the eight side-skirt zones (16–23) remain destructible with their existing AV4/HP, but damage to the skirts does not transfer into Main Health.
 
-All eight possible combinations are included as one mutually exclusive **Fix Configuration** option group. **All 3 Fixes (Recommended)** enables the intended complete setup.
+## Configurations
 
-## Why this fix matters
+Only three configurations remain:
 
-The stock Bastion's external parts interact badly with Helldivers 2's lesser-known **overpenetration** mechanic.
+1. **All 3 Fixes (Recommended)** — Lunch Boxes 0% Main + AV4; Side Skirts 0% Main.
+2. **Light Lunch Boxes + Side Skirts 0% Main** — Lunch Boxes remain AV2; Lunch Boxes and Side Skirts use 0% Main transfer.
+3. **Light Lunch Boxes 0% Main Only** — Lunch Boxes remain AV2 with 0% Main transfer; Side Skirts remain vanilla.
 
-When a projectile's Armor Penetration is at least two levels above the Armor Value of the part it hits, the projectile can continue through that part and strike another damageable part behind it. The continuing projectile typically deals about **30% reduced damage**, retaining roughly **70% of its ballistic damage**.
+The old heavy-only, skirt-only, diagnostic, and redundant combination choices have been removed.
 
-That creates a damage "double dip" against the Bastion. Dangerous Automaton weapons such as **Cannon Turrets and Rocket Striders use AP6 attacks**, while the stock Lunch Boxes are only **AV2**.
+## v1.0.5 non-default crash mitigation
 
-Using only the ballistic portion of a Cannon Turret projectile as an example:
+Testing reported that every v1.0.4 configuration except the recommended first option could crash to desktop during load.
 
-- Initial ballistic damage: **1,500**
-- A stock Lunch Box hit can transfer damage into Bastion Main Health.
-- AP6 greatly exceeds AV2, so the projectile can overpenetrate the Lunch Box and continue into another tank zone.
-- The overpenetrating hit retains roughly 70% damage: **1,500 × 0.70 = 1,050** additional ballistic damage.
-- This can produce as much as **2,550 ballistic damage worth of interaction from one projectile path** before considering other damage components.
+The leading structural difference in the package was that the old builder substituted variable-width Lua values and labels into each option. For example, `true` is four bytes while `false` is five bytes. That meant the embedded Lua resource and final Stingray archive were not the same size between configurations.
 
-This example intentionally does **not** include the Cannon Turret projectile's separate **AP4 explosive damage**.
+v1.0.5 removes that difference without changing the proven locator/writer core:
 
-With the recommended configuration, the Lunch Boxes become **AV4**, and both Lunch Boxes and side skirts transfer **0%** of their damage into Main Health. They remain destructible external components but behave more like sacrificial armor/stowage rather than amplified structural weak points.
+- enabled values still use `true`;
+- disabled values use the Lua falsey literal `nil `, which is also exactly four bytes;
+- runtime configuration labels are padded to a fixed 25-byte width;
+- the builder aborts unless all three variants have identical Lua size, archive size, and resource data offset.
+
+The recommended option keeps the same gameplay/runtime substitutions it used previously. This change is intentionally concentrated in packaging/configuration generation rather than the proven Bastion memory locator and protected writer.
+
+## Why the recommended fix matters
+
+The stock Bastion's external parts interact badly with Helldivers 2's overpenetration mechanic.
+
+When a projectile's Armor Penetration is at least two levels above the Armor Value of the part it hits, the projectile can continue through that part and strike another damageable part behind it. The continuing projectile typically retains roughly 70% of its ballistic damage.
+
+Dangerous Automaton weapons such as Cannon Turrets and Rocket Striders use AP6 attacks, while stock Lunch Boxes are AV2. Raising the Lunch Boxes to AV4 in the recommended configuration prevents the most extreme AP gap while the 0% Main-transfer changes stop those sacrificial external parts from directly draining Main Health.
 
 ## Runtime basis
 
 The Bastion patch remains based directly on the uploaded, known-working v13 patch core rather than a reconstructed FileDiver layout.
 
-The following v13 behavior/constants are preserved:
+Preserved runtime behavior/constants include:
 
 - `BASTION_HEADER` signature validation
 - 14 exact zone hashes and expected HP values
@@ -57,59 +68,42 @@ The following v13 behavior/constants are preserved:
 - `RETRY_INTERVAL = 300`
 - `MAX_ATTEMPTS = 16`
 
-The gameplay-code change inside the proven v13 `plan()` function remains limited to the three selected option gates.
-
 ## Codex Module Bridge v1 compatibility
 
-Codex Module Bridge v1 and this mod both publish the Lua resource:
+**Codex Module Bridge is not required by this mod.**
+
+Codex Module Bridge v1 and Bastion Lunchbox Fixes both publish:
 
 `mods/codex/gun_calibration`
 
-Only one implementation of that resource can win after deployment. Bridge v1's functional job is to conditionally start these separately installed modules:
+The compatibility behavior introduced in v1.0.4 is preserved. When Bastion wins that shared resource, its small dispatcher checks whether these separately installed Codex modules exist before trying to load them:
 
 - `mods/codex/p11_self_heal`
 - `mods/codex/constitution_bolt_amr`
 
-v1.0.4 independently reproduces that dispatch behavior **before** installing the Bastion runtime. It checks `stingray.Application.can_get('lua', name)` before calling `require(name)`, so either module can be absent without breaking startup.
+The checks use `stingray.Application.can_get('lua', name)` and protected `require` calls. If those modules or Codex Module Bridge are not installed, Bastion continues without requiring them.
 
-This means users may download, update, enable, and disable **Codex Module Bridge v1** and **Bastion Lunchbox Fixes** as independent mods. Arsenal may still display a resource-conflict warning because both packages physically contain `gun_calibration`; that warning is expected. For the compatibility path to work, **Bastion Lunchbox Fixes must have the winning priority for `gun_calibration`**.
+If **Codex Module Bridge v1 is installed**, keep it as an independent mod and give **Bastion Lunchbox Fixes the winning priority** for `mods/codex/gun_calibration`. Under Arsenal's normal priority behavior, place Bastion Lunchbox Fixes after/below Codex Module Bridge v1 while still following Bingus Shared Loader's own placement instructions.
 
-Under Arsenal's normal priority behavior, place **Bastion Lunchbox Fixes after/below Codex Module Bridge v1**, while still following Bingus Shared Loader's own placement instructions.
-
-Compatibility is specifically pinned to the supplied **Codex Module Bridge v1** behavior. If a future bridge release adds/removes modules or changes startup logic, this compatibility shim must be revalidated.
-
-### Remaining incompatibility
-
-**HUD Ballistic Trajectory Overlay v2 remains incompatible with this implementation.** It also owns `mods/codex/gun_calibration` and contains gameplay behavior that cannot be safely replaced by the Bridge v1 compatibility shim.
-
-## Configurations
-
-1. **All 3 Fixes (Recommended)** — Lunch Boxes 0% Main + AV4; Side Skirts 0% Main
-2. **Lunch Heavy Armor + Side Skirts 0% Main**
-3. **Lunch 0% Main + Heavy Armor**
-4. **Lunch 0% Main + Side Skirts 0% Main**
-5. **Lunch Boxes Heavy Armor Only**
-6. **Lunch Boxes 0% Main Only**
-7. **Side Skirts 0% Main Only**
-8. **All Off / Diagnostic** — runs the v13 locator/validator with no Bastion gameplay writes; Bridge v1 compatibility dispatch still runs
+Compatibility remains pinned specifically to the supplied Codex Module Bridge v1 behavior. **HUD Ballistic Trajectory Overlay v2 remains incompatible** because it also requires its own implementation of `mods/codex/gun_calibration`.
 
 ## Requirement: Bingus Shared Loader
 
-**Bingus Shared Loader by CowboyBingus is REQUIRED and is not included.** Install it separately and follow the loader's current installation/load-order instructions.
+**Bingus Shared Loader by CowboyBingus is required and is not included.** Install it separately and follow the loader's current installation/load-order instructions.
 
-This is an unofficial third-party integration. It is not authored, maintained, endorsed, or supported by CowboyBingus or the Codex Module Bridge author.
+Codex Module Bridge is optional and is not bundled.
 
 ## Installation
 
 1. Install **Bingus Shared Loader** separately.
-2. Import `Bastion_Lunchbox_Fixes_v1.0.4_ExactV13_Arsenal.zip` into Arsenal.
-3. If using **Codex Module Bridge v1**, keep it enabled normally and give **Bastion Lunchbox Fixes the winning priority** over it for their shared resource.
-4. Enable **Bastion Lunchbox Fixes** and choose one **Fix Configuration** option.
-5. Use **All 3 Fixes (Recommended)** for the full intended setup.
+2. Import `Bastion_Lunchbox_Fixes_v1.0.5_ExactV13_Arsenal.zip` into Arsenal.
+3. Choose one **Fix Configuration** option.
+4. Use **All 3 Fixes (Recommended)** for the intended complete setup.
+5. If using **Codex Module Bridge v1**, leave it independently installed and give Bastion Lunchbox Fixes winning priority for their shared `gun_calibration` resource.
 6. Purge/deploy the Arsenal profile with the game closed.
 7. Launch Helldivers 2.
 
-The Bastion runtime writes its diagnostic status to:
+The Bastion runtime writes diagnostic status to:
 
 `%LOCALAPPDATA%\CowboyBingus\Helldivers2\Logs\BastionAccessoryArmor.log`
 
@@ -119,11 +113,11 @@ The compatibility dispatcher also attempts to write:
 
 ## Repository layout
 
-- `src/CodexModuleBridgeCompat.lua` — Bridge v1 compatibility prefix; conditionally starts the two Codex gameplay modules before the Bastion runtime
-- `src/BastionLunchboxFixes.template.part*.lua` — exact-v13-derived Bastion runtime template split into three source parts
+- `src/CodexModuleBridgeCompat.lua` — optional Bridge v1 compatibility dispatcher
+- `src/BastionLunchboxFixes.template.part*.lua` — exact-v13-derived Bastion runtime template
 - `manifest.json` — Arsenal option definitions
-- `BUILD_INFO.json` — preserved v13 constants, compatibility contract, and derivation details
-- `build_bastion_lunchbox_fixes.py` — joins the compatibility prefix and exact Bastion core, substitutes option values, validates ordering/resource identity, and packages the Arsenal archive
+- `BUILD_INFO.json` — preserved constants, compatibility contract, and derivation details
+- `build_bastion_lunchbox_fixes.py` — builds and validates equal-geometry Arsenal variants
 - `CHANGELOG.md` — release/history notes
 
 ## Disclaimer
@@ -131,7 +125,5 @@ The compatibility dispatcher also attempts to write:
 **Vibe coded with ChatGPT.**
 
 This is an experimental third-party mod built from community research, game-data analysis, reverse engineering, in-game testing, and AI-assisted code generation. Compatibility with future Helldivers 2, Codex Module Bridge, or Shared Loader versions is not guaranteed. Use at your own risk.
-
-Bingus Shared Loader and Codex Module Bridge are authored and distributed separately; their packages are not bundled here.
 
 Helldivers 2 is property of Arrowhead Game Studios / Sony Interactive Entertainment. This project is not affiliated with or endorsed by Arrowhead, Sony, CowboyBingus, or the Codex Module Bridge author.

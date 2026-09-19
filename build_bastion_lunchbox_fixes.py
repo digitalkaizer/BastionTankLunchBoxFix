@@ -1,9 +1,10 @@
-"""Reproducibly build Bastion Lunchbox Fixes v1.0.4.
+"""Reproducibly build Bastion Lunchbox Fixes v1.0.5.
 
-The Bastion runtime template remains derived directly from the known-working v13
-patch core. v1.0.4 prepends a small compatibility dispatcher for Codex Module
-Bridge v1, then substitutes only the three Bastion option booleans/config label
-and packages the combined Lua source into the existing gun_calibration resource.
+v1.0.5 deliberately preserves the known-working v1.0.4/v13 runtime and Codex
+Module Bridge compatibility prefix. The Arsenal configuration set is reduced to
+three useful choices. All generated runtime Lua resources are forced to the same
+byte length so alternate configurations keep the same Stingray archive geometry
+as the working recommended configuration.
 """
 
 from pathlib import Path
@@ -16,7 +17,8 @@ OUT = ROOT / "build"
 ARCHIVE_NAME = "9ba626afa44a3aa3.patch_0"
 RESOURCE_TYPE = 0xA14E8DFA2CD117E2
 RESOURCE_HASH = 0x9537023F38D32BCD
-RELEASE_VERSION = "1.0.4"
+RELEASE_VERSION = "1.0.5"
+RUNTIME_LABEL_WIDTH = 25
 EXPECTED_BRIDGE_MODULES = (
     "mods/codex/p11_self_heal",
     "mods/codex/constitution_bolt_amr",
@@ -29,25 +31,51 @@ TEMPLATE_PARTS = [
     ROOT / "src" / "BastionLunchboxFixes.template.part3.lua",
 ]
 
+# folder, Arsenal label, fixed-width runtime label, lunch 0% Main, lunch AV4, skirts 0% Main
 VARIANTS = [
-    ("01_All_3_Fixes", "All 3 Fixes (Recommended)", True, True, True),
-    ("02_Lunch_Heavy_Skirts", "Lunch Heavy Armor + Side Skirts 0% Main", False, True, True),
-    ("03_Lunch_0Main_Heavy", "Lunch 0% Main + Heavy Armor", True, True, False),
-    ("04_Lunch_0Main_Skirts", "Lunch 0% Main + Side Skirts 0% Main", True, False, True),
-    ("05_Lunch_Heavy_Only", "Lunch Boxes Heavy Armor Only", False, True, False),
-    ("06_Lunch_0Main_Only", "Lunch Boxes 0% Main Only", True, False, False),
-    ("07_Skirts_0Main_Only", "Side Skirts 0% Main Only", False, False, True),
-    ("08_All_Off", "All Off / Diagnostic", False, False, False),
+    (
+        "01_All_3_Fixes",
+        "All 3 Fixes (Recommended)",
+        "All 3 Fixes (Recommended)",
+        True, True, True,
+    ),
+    (
+        "02_Light_Lunch_And_Skirts",
+        "Light Lunch Boxes + Side Skirts 0% Main",
+        "Light Boxes + 0% Skirts",
+        True, False, True,
+    ),
+    (
+        "03_Light_Lunch_Only",
+        "Light Lunch Boxes 0% Main Only",
+        "Light Boxes Only",
+        True, False, False,
+    ),
 ]
 
 
-def lua_source(label: str, lunch_0main: bool, lunch_heavy: bool, skirts_0main: bool) -> bytes:
+def fixed_bool(value: bool) -> str:
+    """Return a four-byte Lua truthy/falsey literal.
+
+    `true` and `nil ` are both exactly four bytes. This keeps every generated
+    Lua resource the same length while preserving normal Lua boolean behavior.
+    """
+    return "true" if value else "nil "
+
+
+def fixed_label(label: str) -> str:
+    if len(label) > RUNTIME_LABEL_WIDTH:
+        raise RuntimeError(f"Runtime label too long ({len(label)} > {RUNTIME_LABEL_WIDTH}): {label}")
+    return label.ljust(RUNTIME_LABEL_WIDTH)
+
+
+def lua_source(runtime_label: str, lunch_0main: bool, lunch_heavy: bool, skirts_0main: bool) -> bytes:
     text = "".join(path.read_text(encoding="utf-8") for path in TEMPLATE_PARTS)
     values = {
-        "{{OPT_LUNCH_TRANSFER}}": str(lunch_0main).lower(),
-        "{{OPT_HEAVY_ARMOR}}": str(lunch_heavy).lower(),
-        "{{OPT_SKIRTS_TRANSFER}}": str(skirts_0main).lower(),
-        "{{CONFIG_LABEL}}": label.replace("'", "\\'"),
+        "{{OPT_LUNCH_TRANSFER}}": fixed_bool(lunch_0main),
+        "{{OPT_HEAVY_ARMOR}}": fixed_bool(lunch_heavy),
+        "{{OPT_SKIRTS_TRANSFER}}": fixed_bool(skirts_0main),
+        "{{CONFIG_LABEL}}": fixed_label(runtime_label).replace("'", "\\'"),
     }
     for token, value in values.items():
         text = text.replace(token, value)
@@ -125,12 +153,36 @@ def main() -> None:
     OUT.mkdir(parents=True)
     shutil.copy2(ROOT / "manifest.json", OUT / "manifest.json")
 
-    for folder, label, lunch_0main, lunch_heavy, skirts_0main in VARIANTS:
+    reference_lua_size = None
+    reference_archive_size = None
+    reference_data_offset = None
+
+    for folder, label, runtime_label, lunch_0main, lunch_heavy, skirts_0main in VARIANTS:
         dest = OUT / folder
         dest.mkdir(parents=True)
-        lua = lua_source(label, lunch_0main, lunch_heavy, skirts_0main)
+        lua = lua_source(runtime_label, lunch_0main, lunch_heavy, skirts_0main)
         archive = make_archive(lua)
         verify_archive(archive, lua)
+
+        data_offset = struct.unpack_from("<Q", archive, 120)[0]
+        if reference_lua_size is None:
+            reference_lua_size = len(lua)
+            reference_archive_size = len(archive)
+            reference_data_offset = data_offset
+        else:
+            if len(lua) != reference_lua_size:
+                raise RuntimeError(
+                    f"Variant {label!r} changed Lua size: {len(lua)} != {reference_lua_size}"
+                )
+            if len(archive) != reference_archive_size:
+                raise RuntimeError(
+                    f"Variant {label!r} changed archive size: {len(archive)} != {reference_archive_size}"
+                )
+            if data_offset != reference_data_offset:
+                raise RuntimeError(
+                    f"Variant {label!r} changed resource data offset: {data_offset} != {reference_data_offset}"
+                )
+
         (dest / ARCHIVE_NAME).write_bytes(archive)
         (dest / f"{ARCHIVE_NAME}.stream").write_bytes(b"")
         (dest / f"{ARCHIVE_NAME}.gpu_resources").write_bytes(b"")
@@ -138,6 +190,10 @@ def main() -> None:
     arsenal = ROOT / f"Bastion_Lunchbox_Fixes_v{RELEASE_VERSION}_ExactV13_Arsenal.zip"
     deterministic_zip(OUT, arsenal)
     print(arsenal)
+    print(
+        f"Verified {len(VARIANTS)} variants: lua_size={reference_lua_size}, "
+        f"archive_size={reference_archive_size}, data_offset={reference_data_offset}"
+    )
 
 
 if __name__ == "__main__":

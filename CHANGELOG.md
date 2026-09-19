@@ -1,11 +1,24 @@
 # Changelog
 
+## v1.0.5 — Configuration / Archive Stability Cleanup
+
+- Keeps the proven v1.0.4 / exact-v13 Bastion runtime and Codex Module Bridge v1 compatibility behavior.
+- Reduces the Arsenal configuration list from eight choices to three practical choices:
+  - **All 3 Fixes (Recommended)** — Lunch Boxes 0% Main + AV4; Side Skirts 0% Main.
+  - **Light Lunch Boxes + Side Skirts 0% Main** — Lunch Boxes remain AV2; Lunch Boxes and Side Skirts use 0% Main transfer.
+  - **Light Lunch Boxes 0% Main Only** — Lunch Boxes remain AV2 with 0% Main transfer; Side Skirts remain vanilla.
+- Addresses the leading crash hypothesis for non-default variants: prior option substitutions changed the embedded Lua resource length and therefore the generated Stingray archive geometry.
+- Disabled booleans are now emitted as the fixed-width Lua falsey literal `nil ` instead of `false`, matching the four-byte width of `true`.
+- Runtime configuration labels are padded to a fixed 25-byte width.
+- The builder now refuses to produce a release unless every variant has identical Lua size, archive size, and resource data offset.
+- Codex Module Bridge remains optional. The existing dispatcher still checks for the separately installed Codex modules before loading them; this mod does not require Codex Module Bridge in the mod list.
+
 ## v1.0.4 — Codex Module Bridge v1 Compatibility
 
 - Preserves the exact known-working v13 Bastion runtime core used by v1.0.3.
 - Corrects the Bastion runtime/log revision label to `runtime-v13-options-v1.0.4`; this is metadata only and does not change locator/writer behavior.
 - Adds a small compatibility dispatcher before the Bastion runtime for **Codex Module Bridge v1**.
-- When Bastion Lunchbox Fix has winning priority for `mods/codex/gun_calibration`, it now conditionally starts the two modules Bridge v1 was responsible for starting:
+- When Bastion Lunchbox Fix has winning priority for `mods/codex/gun_calibration`, it conditionally starts the two modules Bridge v1 was responsible for starting:
   - `mods/codex/p11_self_heal`
   - `mods/codex/constitution_bolt_amr`
 - Uses `stingray.Application.can_get('lua', name)` before `require(name)`, so either Codex gameplay module may be absent without breaking the Bastion fix.
