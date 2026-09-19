@@ -1,10 +1,9 @@
-"""Reproducibly build Bastion Lunchbox Fixes v1.0.5.
+"""Reproducibly build Bastion Lunchbox Fixes v1.0.4.
 
 The Bastion runtime template remains derived directly from the known-working v13
-patch core. v1.0.5 prepends the compatibility dispatcher for Codex Module
-Bridge v1 plus the separately packaged vehicle aggro diagnostic, then substitutes
-only the three Bastion option booleans/config label and packages the combined Lua
-source into the existing gun_calibration resource.
+patch core. v1.0.4 prepends a small compatibility dispatcher for Codex Module
+Bridge v1, then substitutes only the three Bastion option booleans/config label
+and packages the combined Lua source into the existing gun_calibration resource.
 """
 
 from pathlib import Path
@@ -17,11 +16,10 @@ OUT = ROOT / "build"
 ARCHIVE_NAME = "9ba626afa44a3aa3.patch_0"
 RESOURCE_TYPE = 0xA14E8DFA2CD117E2
 RESOURCE_HASH = 0x9537023F38D32BCD
-RELEASE_VERSION = "1.0.5"
+RELEASE_VERSION = "1.0.4"
 EXPECTED_BRIDGE_MODULES = (
     "mods/codex/p11_self_heal",
     "mods/codex/constitution_bolt_amr",
-    "mods/codex/vehicle_aggro_diagnostic",
 )
 
 TEMPLATE_PARTS = [
@@ -36,21 +34,9 @@ VARIANTS = [
     ("02_Lunch_Heavy_Skirts", "Lunch Heavy Armor + Side Skirts 0% Main", False, True, True),
     ("03_Lunch_0Main_Heavy", "Lunch 0% Main + Heavy Armor", True, True, False),
     ("04_Lunch_0Main_Skirts", "Lunch 0% Main + Side Skirts 0% Main", True, False, True),
-    ("05_Lunch_Heavy_Only", "Lunch Boxes Heavy Armor Only", False, False, False),
-    ("06_Lunch_0Main_Only", "Lunch Boxes 0% Main Only", True, False, False),
-    ("07_Skirts_0Main_Only", "Side Skirt 0% Main Only", False, False, True),
-    ("08_All_Off", "All Off / Diagnostic", False, False, False),
-]
-
-# Preserve v1.0.4 variant semantics exactly.
-VARIANTS = [
-    ("01_All_3_Fixes", "All 3 Fixes (Recommended)", True, True, True),
-    ("02_Lunch_Heavy_Skirts", "Lunch Heavy Armor + Side Skirts 0% Main", False, True, True),
-    ("03_Lunch_0Main_Heavy", "Lunch 0% Main + Heavy Armor", True, True, False),
-    ("04_Lunch_0Main_Skirts", "Lunch 0% Main + Side Skirts 0% Main", True, False, True),
     ("05_Lunch_Heavy_Only", "Lunch Boxes Heavy Armor Only", False, True, False),
     ("06_Lunch_0Main_Only", "Lunch Boxes 0% Main Only", True, False, False),
-    ("07_Skirts_0Main_Only", "Side Skirts 0% Main Only", False, False, True),
+    ("07_Skirts_0Main_Only", "Side Skirt 0% Main Only", False, False, True),
     ("08_All_Off", "All Off / Diagnostic", False, False, False),
 ]
 
@@ -68,6 +54,8 @@ def lua_source(label: str, lunch_0main: bool, lunch_heavy: bool, skirts_0main: b
     if "{{" in text or "}}" in text:
         raise RuntimeError("Unresolved template token")
 
+    # Compatibility is deliberately a prefix: bridge-owned gameplay modules
+    # initialize before the Bastion runtime wraps update().
     bastion_guard = "if rawget(_G, 'KZR_BastionAccessoryArmor') then return end"
     bridge_guard = "if not rawget(_G, 'CodexModuleBridge') then"
     if bridge_guard not in text or bastion_guard not in text:
@@ -76,7 +64,7 @@ def lua_source(label: str, lunch_0main: bool, lunch_heavy: bool, skirts_0main: b
         raise RuntimeError("Codex bridge compatibility must precede Bastion initialization")
     for module_name in EXPECTED_BRIDGE_MODULES:
         if module_name not in text:
-            raise RuntimeError(f"Missing compatibility module: {module_name}")
+            raise RuntimeError(f"Missing Codex Bridge v1 module: {module_name}")
 
     return text.encode("utf-8")
 
@@ -118,6 +106,7 @@ def verify_archive(archive: bytes, expected_lua: bytes) -> None:
 
 
 def deterministic_zip(root: Path, destination: Path) -> None:
+    """Write stable ZIP bytes independent of filesystem mtimes or build host."""
     with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as zf:
         for path in sorted(root.rglob("*")):
             if not path.is_file():
