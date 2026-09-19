@@ -36,7 +36,7 @@ VARIANTS = [
     ("04_Lunch_0Main_Skirts", "Lunch 0% Main + Side Skirts 0% Main", True, False, True),
     ("05_Lunch_Heavy_Only", "Lunch Boxes Heavy Armor Only", False, True, False),
     ("06_Lunch_0Main_Only", "Lunch Boxes 0% Main Only", True, False, False),
-    ("07_Skirts_0Main_Only", "Side Skirt 0% Main Only", False, False, True),
+    ("07_Skirts_0Main_Only", "Side Skirts 0% Main Only", False, False, True),
     ("08_All_Off", "All Off / Diagnostic", False, False, False),
 ]
 
