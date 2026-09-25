@@ -1,34 +1,21 @@
 {
   "Version": 1,
-  "Guid": "1eb0b075-035c-49d8-b7f0-67311d56b83b",
-  "Name": "Bastion Lunchbox Fixes",
-  "Description": "v1.0.6: three stable configurations, permanent staged-write sequencing for light Lunch Boxes + 0% skirts, DigitalKaizer-owned runtime/log identifiers, and optional Codex Module Bridge v1 compatibility. Requires Bingus Shared Loader.",
+  "Guid": "c9ab58ef-9dca-47af-8acf-a9302af64891",
+  "Name": "HD2 Better Tanks v1.0.0",
+  "Description": "Configurable Bastion + Storm tank overhaul with armor, durability, handling, ammunition, fire rate, reload timing, smoke/missile capacity, cooldowns, and optional integrated Tank HUD.",
   "Options": [
     {
-      "Name": "Fix Configuration",
-      "Description": "Choose one configuration. All 3 Fixes is recommended.",
-      "SubOptions": [
-        {
-          "Name": "All 3 Fixes (Recommended)",
-          "Description": "Lunch Boxes: 0% Main transfer + AV4; Side Skirts: 0% Main transfer.",
-          "Include": [
-            "01_All_3_Fixes"
-          ]
-        },
-        {
-          "Name": "Light Lunch Boxes + Side Skirts 0% Main",
-          "Description": "Lunch Boxes remain AV2 with 0% Main transfer; Side Skirts use 0% Main transfer. Uses the proven safe staged-write sequence internally.",
-          "Include": [
-            "02_Light_Lunch_And_Skirts"
-          ]
-        },
-        {
-          "Name": "Light Lunch Boxes 0% Main Only",
-          "Description": "Lunch Boxes remain AV2 with 0% Main transfer; Side Skirts remain vanilla.",
-          "Include": [
-            "03_Light_Lunch_Only"
-          ]
-        }
+      "Name": "Core - Better Tanks",
+      "Description": "Required Better Tanks gameplay and configuration modules.",
+      "Include": [
+        "Core"
+      ]
+    },
+    {
+      "Name": "Integrated Tank HUD",
+      "Description": "Optional Better Tanks tank HUD.",
+      "Include": [
+        "TankHUD_Integrated"
       ]
     }
   ]
