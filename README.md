@@ -50,6 +50,10 @@ Runtime information is written to:
 
 Do not simultaneously use other mods that edit the same tank health, armor, handling, ammunition, weapon timing, smoke, missile-capacity, cooldown, or HUD data.
 
+## v1.0.0 hotfix
+
+The current v1.0.0 build fixes the remaining Bastion HMG HUD validation limit so custom HMG capacities above the vanilla 2000-round value are correctly picked up by the integrated Tank HUD.
+
 ## Notes
 
 Some tracked-vehicle fields are still not fully understood. The config identifies those settings conservatively rather than assigning unsupported names to them.
