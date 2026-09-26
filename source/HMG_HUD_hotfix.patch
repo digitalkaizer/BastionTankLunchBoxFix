@@ -1,0 +1,10 @@
+--- a/integrated_tank_hud.lua
++++ b/integrated_tank_hud.lua
+@@ -433,7 +433,7 @@
+  end
+  d.attempts=d.attempts+1
+- if integer(value,2000) then
++ if integer(value,BT.bastion_hmg_ammo) then
+   d.valid=d.valid+1
+   if c.mg~=nil and value~=c.mg then d.changed=d.changed+1 end
+   c.mg=value;c.coax_seen=true;c.coax_valid_at=M.clock
